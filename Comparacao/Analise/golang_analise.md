@@ -1,17 +1,32 @@
 # Golang
 
+![GOlang](./go.png)
+
+# Sumario
+1. [Por que aprender](##por-que-aprender?)
+2. [Análise da LP](##análise-da-lp)
+3. [Códigos de exemplo](##códigos-de-exemplo)
+
 ## Por que aprender?
+
+![GOgoogle](./google.png)
 
 * O Google criou o Golang para resolver os problemas que eles encaram na empresa.
   * Programas complexos usados para softwares de servidores grandes que funcionavam em cima de grandes clusters(vários servidores funcionando entre si).
+
+  ![Clusters](./clusters.webp)
+
   * Antes era usado o C++ e o Java, mas elas não tinha uma fluidez e capacidade de escrita adequada para programas de tal escala.
   * Levando esses fatores em consideração, Ken Thompson e  Robert Griesemer idealizaram o golang para resolver esses problemas.
+
+  ![Robert and Ken](./Robert_and_Ken.jpeg)
+  Figura: Robert Griesemer à esquerda e Ken Thompson à direita
 
 * Direcionado a programas de grandes complexidade e escala, ou que exigiriam eficiencia e um código de grande escalabilidade(i.e, um programa que funciona bem mesmo com uma grande quantidade de dados envolvida; e.g., programas de complexidade linear O(n)).
 
 * Por ser uma linguagem nova e adaptada aos recursos modernos amplamente difundidos no panorama de ambientes de programação atuais, e.g. networking, complexos clusters de computadores, e clouds(nuvem); ela é capaz de suprir e se integrar diretamente a essas novas tecnologias ao contrário de outras linguagens antigas de 10 ou 20 anos atrás.
 
-* Eficiencia: capacidade de funcionar em milhares de máquinas ao mesmo tempo e pouco desperdício de recursos que ocorreriam em implementações de máquinas virtuais.
+* ***Eficiencia***: capacidade de funcionar em milhares de máquinas ao mesmo tempo e pouco desperdício de recursos que ocorreriam em implementações de máquinas virtuais.
 
 * Desse modo, com essas qualidade, o Golang se tornou um modelo bastante prezada pela comunidade de desenvolvedores.
 
@@ -343,4 +358,106 @@ int main() {
   return 0;
 
 }
+```
+
+### Array
+
+``` go
+package main
+
+import "fmt"
+
+func main() {
+
+  // Declaracoes de array
+  // Forma 1
+  // var A[5] int
+
+  // Forma 2
+  B := [5]int{0,1,2,3,4}
+
+  // Percorrer array
+  for i, value := range B {
+    fmt.Println(value, i)
+  }
+
+  // Slices - arranjos dinamicos e referencias a arrays
+
+  // Forma 1
+  
+  Slice := []int{0,1,2,3,4}
+
+  sub := Slice[2:4]
+  fmt.Println(sub)
+
+  // Forma 2(tipo, tamanho, capacidade)
+  sub2 := make([]int, 5, 10)
+
+  copy(sub2, Slice)
+
+  fmt.Println(sub2)
+
+  sub3 := append(Slice,2,-3,0)
+  fmt.Println(sub3)
+}
+```
+
+``` C
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+
+int main() {
+
+  int B[5] = {0,1,2,3,4};
+  int size = sizeof(B)/sizeof(B[0]);
+
+  for(int i = 0; i < size; i++){
+    printf("%d %d\n", B[i], i);
+  }
+
+  // Não há arranjos em C. Mas a implementação ficaria
+  // parecido com esse trecho
+  int* sub[5];
+  sub[0] = &(B[2]);
+  sub[1] = &(B[3]);
+
+  printf("[");
+  printf("%d %d", *sub[0], *sub[1]);
+  printf("]\n");
+
+
+  // Copy array
+  int* sub2[5];
+  for(int i = 0; i < size; i++){
+    sub2[i] = &B[i];
+  }
+
+  printf("[");
+  printf("%d", *sub2[0]);
+
+  for(int i = 1; i < size; i++){
+    printf(" %d", *sub2[i]);
+  }
+  printf("]\n");
+
+  int C[3] = {2,-3,0};
+  int* sub3 = malloc(8*sizeof(int));
+
+  memcpy(sub3, B, 5*sizeof(B[0]));
+  memcpy(sub3+5, C, 3*sizeof(C[0]));
+
+  printf("[");
+  printf("%d", sub3[0]);
+  for(int i = 1; i < 8; i++){
+    printf(" %d", sub3[i]);
+  }
+  printf("]\n");
+
+  
+  return 0;
+
+}
+
 ```
