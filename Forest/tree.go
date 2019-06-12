@@ -36,9 +36,8 @@ func NewTree(inputs [][]interface{}, labels []int, nSamples int, nFeatures int) 
 }
 
 func buildTree(samples [][]interface{}, samplesLabels []int, nFeatures int) *Node{
-	nColumns := len(samples[1]) 	// amostras
-	//nRows := nFeatures				// características
-	selectedColumns := 	randomColumns(nColumns, nFeatures)			
+	nColumns := len(samples[1]) 	// Features
+	selectedColumns := 	randomColumns(nColumns, nFeatures) // feat selecionadas para o cutPoint			
 
 	bestGain := 0.0
 	bestPartL := make([]int, 0, len(samples))
