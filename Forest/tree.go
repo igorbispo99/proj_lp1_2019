@@ -1,4 +1,4 @@
-package forest
+package Forest
 
 import( //"fmt"
 		"math"
@@ -19,7 +19,7 @@ type Tree struct{
 	nClasses int
 }
 
-func newTree(inputs [][]interface{}, labels []int, nSamples int, nFeatures int) *Tree {
+func NewTree(inputs [][]interface{}, labels []int, nSamples int, nFeatures int) *Tree {
 	samplesLabels := make([]int, nSamples)
 	samples := make([][]interface{}, nSamples)
 
@@ -36,7 +36,7 @@ func newTree(inputs [][]interface{}, labels []int, nSamples int, nFeatures int) 
 }
 
 func buildTree(samples [][]interface{}, samplesLabels []int, nFeatures int) *Node{
-	nColumns := len(samples[0]) 	// amostras
+	nColumns := len(samples[1]) 	// amostras
 	//nRows := nFeatures				// características
 	selectedColumns := 	randomColumns(nColumns, nFeatures)			
 
