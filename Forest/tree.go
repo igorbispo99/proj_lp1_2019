@@ -84,6 +84,20 @@ func buildTree(samples [][]interface{}, samplesLabels []int, nSelectedFeatures i
 
 			// contruindo árvore recursivamente para os sub-espaço da direita e da esquerda.
 			
+			/* //contruindo Sub-espaços da direita e da esquerda em paralelo	
+			wg := sync.WaitGroup{}
+			wg.Add(2)
+			go func (){
+				node.left = buildTree(getSamples(samples, bestPartL), getLabels(samplesLabels, bestPartL), nFeatures, maxDepth, tree)
+				wg.Done()
+			}
+			go func(){
+				node.right = buildTree(getSamples(samples, bestPartR), getLabels(samplesLabels, bestPartR), nFeatures, maxDepth, tree)
+				wg.Done()
+			}
+			
+			wg.Wait() */
+			
 			node.left = buildTree(getSamples(samples, bestPartL), getLabels(samplesLabels, bestPartL), nFeatures, maxDepth, tree)
 			node.right = buildTree(getSamples(samples, bestPartR), getLabels(samplesLabels, bestPartR), nFeatures, maxDepth, tree)
 			return node
