@@ -6,52 +6,51 @@ import (
 )
 
 type RFClassifier struct {
-	forest   []Tree
+	forest   []*Tree
 	nTrees   int
-	nThreads int
+	nLabels  int
+	maxDepth int
 }
 
-func CreateRFClassifier(nTrees int, nThreads int) *RFClassifier {
+func CreateRFClassifier(nTrees int, maxDepth int, nLabels int) *RFClassifier {
 
 	rfClass := &RFClassifier{}
 
-	rfClass.forest = make([]Tree, nTrees)
+	rfClass.forest = make([]*Tree, nTrees)
 
 	rfClass.nTrees = nTrees
 
-	rfClass.nThreads = nThreads
+	//rfClass.nThreads = nThreads
+
+	rfClass.nLabels = nLabels
+
+	rfClass.maxDepth = maxDepth
 
 	return rfClass
 }
 
-func FitRFClassifier(rf *RFClassifier, inputs [][]interface{}, labels []int, nSamples int, nFeatures int) {
+func FitRFClassifier(rf *RFClassifier, inputs [][]float64, labels []int, nSamples int, nFeatures int) {
 	// Initializing and Training trees
 
-	fmt.Printf("Fitting data w/ %d trees and %d threads...\n", rf.nTrees, rf.nThreads)
+	fmt.Printf("Fitting data w/ %d trees, %d features/samples and %d samples/tree...\n", rf.nTrees, nFeatures, nSamples)
 
-	wg := new(sync.WaitGroup)
+	wg_ := new(sync.WaitGroup)
 
 	for i := 0; i < rf.nTrees; i++ {
-		wg.Add(1)
+		wg_.Add(1)
 
 		go func(i int) {
-			defer wg.Done()
-
-			tree := NewTree(inputs, labels, nSamples, nFeatures)
-			rf.forest[i] = *tree
-
+			rf.forest[i] = NewTree(inputs, labels, nSamples, nFeatures, rf.maxDepth)
+			wg_.Done()
 		}(i)
 	}
 
-	go func() {
-		wg.Wait()
-	}()
+	wg_.Wait()
 
 	fmt.Printf("Done...\n")
-
 }
 
-func PredRFCLassifier(rf *RFClassifier, inputs [][]interface{}) []int {
+func PredRFCLassifier(rf *RFClassifier, inputs [][]float64) []int {
 
 	preds := make([][]int, rf.nTrees)
 
@@ -64,19 +63,16 @@ func PredRFCLassifier(rf *RFClassifier, inputs [][]interface{}) []int {
 			// TODO Função Forest.Predict não existe ainda
 			// TODO Descomentar a linha seguinte quando Predict existir
 
-			// preds[i] = Forest.Predict(rf.forest[i], inputs)
+			preds[i] = PredictTree(rf.forest[i], inputs)
+			wg.Done()
 		}(i)
 	}
 
-	go func() {
-		wg.Wait()
-	}()
+	wg.Wait()
 
 	// Returning most frequent value to each sample
 
 	yPredicted := make([]int, len(inputs))
-
-	nLabels := len(inputs[0])
 
 	for j := 0; j < len(inputs); j++ {
 
@@ -84,31 +80,33 @@ func PredRFCLassifier(rf *RFClassifier, inputs [][]interface{}) []int {
 
 		go func(j int) {
 
+			yHist := make([]int, rf.nLabels)
+
 			// (Probably) This loop isnt multi-thread"ible"
 			for i := 0; i < rf.nTrees; i++ {
-				preds[preds[i][j]%nLabels][j] += nLabels
+				yHist[preds[i][j]] += 1
 			}
 
-			max := preds[0][j]
-			yPredicted[j] = 0
+			max := yHist[0]
+			maxIdx := 0
 
 			// Maybe this loop is "multi-thread"ible"
-			for i := 1; i < rf.nTrees; i++ {
+			for i := 1; i < rf.nLabels; i++ {
 
-				if preds[i][j] > max {
-					max = preds[i][j]
-					yPredicted[j] = j
+				if yHist[i] > max {
+					max = yHist[i]
+					maxIdx = i
 				}
-
 			}
 
+			yPredicted[j] = maxIdx
+
+			wg.Done()
 		}(j)
 
 	}
 
-	go func() {
-		wg.Wait()
-	}()
+	wg.Wait()
 
 	return yPredicted
 }

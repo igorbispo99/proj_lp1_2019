@@ -13,9 +13,9 @@ type Tree struct {
 }
 
 // Retorna uma nova árvore com nSamples (número de amostras) aleatórias do input.
-func NewTree(input [][]interface{}, labels []int, nSamples int, nSelectedFeatures int, maxDepth int) *Tree {
+func NewTree(input [][]float64, labels []int, nSamples int, nSelectedFeatures int, maxDepth int) *Tree {
 	samplesLabels := make([]int, nSamples)
-	samples := make([][]interface{}, nSamples)
+	samples := make([][]float64, nSamples)
 
 	wg := sync.WaitGroup{}
 
@@ -39,11 +39,11 @@ func NewTree(input [][]interface{}, labels []int, nSamples int, nSelectedFeature
 // Cria a árvore recursivamente
 // - Seleciona algumas Características, - Calcula a Entropia, - encontra melhor ponto de corte (Característica de Corte),
 // - Separa os Rótulos, - Calcula sub-árvores à esquerda e à direita
-func buildTree(samples [][]interface{}, samplesLabels []int, nSelectedFeatures int, maxDepth int, tree *Tree) *Node {
+func buildTree(samples [][]float64, samplesLabels []int, nSelectedFeatures int, maxDepth int, tree *Tree) *Node {
 
 	if tree.depth != maxDepth {
 		tree.depth += 1
-		nFeatures := len(samples[1])                                     // Features
+		nFeatures := len(samples[0])                                     // Features
 		selectedFeatures := randomFeatures(nFeatures, nSelectedFeatures) // características selecionadas para o cutPoint
 
 		bestGain := 0.0
@@ -51,7 +51,7 @@ func buildTree(samples [][]interface{}, samplesLabels []int, nSelectedFeatures i
 		bestPartR := make([]int, 0, len(samples))
 		bestTotalL := 0
 		bestTotalR := 0
-		var bestThreshold interface{}
+		var bestThreshold float64
 		var bestThresholdIdx int
 
 		total := len(samplesLabels)
@@ -125,7 +125,7 @@ func randomFeatures(nFeatures int, nSelectedFeatures int) []int {
 
 // Input: Árvore de decisão e amostras
 // Output: Vetor de classificação das amostras
-func predictTree(tree Tree, input [][]interface{}) []int {
+func PredictTree(tree *Tree, input [][]float64) []int {
 	predictions := make([]int, len(input))
 
 	// Verificar e classificar cada amostra
@@ -141,13 +141,17 @@ func predictTree(tree Tree, input [][]interface{}) []int {
 		// é menor que o threshold, caso contrário à direita
 		for labelsLength == 0 {
 			feature := currentNode.thredholdIdx
-			threshold := currentNode.threshold.(float32)
+			threshold := currentNode.threshold
 
-			if sample[feature].(float32) < threshold {
+			if sample[feature] < threshold {
 				currentNode = currentNode.left
 			} else {
 				currentNode = currentNode.right
 			}
+
+			// Atualiza labelsLength com a quantidade de labels do nó atual
+			labelsLength = len(currentNode.labels)
+
 		}
 
 		// Encontrar o índice do label de maior ocorrência
@@ -209,14 +213,14 @@ func Gini(p_vec map[string]float64) float64 { // VERIFICAR
 /* Cada divisão do espaço é representada por um nó na árvore de decisão. A primeira divisão (nós raiz da árvore) leva em consideração todos os exemplos (separados aleatóriamente) do espaço ao encontrar o ponto de corte que maximiza a pureza, de acordo com algum critério de impureza, das sub-regiões resultantes.
 Para encontrar melhor ponto de corte, são testados todos os possíveis, ou seja, para cada atributo e valores possíveis calcula-se o ganho de informação (quão pura a divisão torna o espaço) para cada um dos pontos de corte candidatos. Após essa etapa, é escolhido o candidato com maior ganho de informação para ser o ponto de corte do nó em questão.
 */
-func cutPoint(samples [][]interface{}, c int, samplesLabels []int, currentEntropy float64) (float64, interface{}, int, int) {
-	var bestThreshold interface{}
+func cutPoint(samples [][]float64, c int, samplesLabels []int, currentEntropy float64) (float64, float64, int, int) {
+	var bestThreshold float64
 	bestGain := 0.0
 	totalR := 0
 	totalL := 0
 
-	uniqValues := make(map[interface{}]int) // valores ordenados únicos da característica c (coluna c)
-	for i := 0; i < len(samples); i++ {     // map só tem os índices atribuídos de 1, outros não existem
+	uniqValues := make(map[float64]int) // valores ordenados únicos da característica c (coluna c)
+	for i := 0; i < len(samples); i++ { // map só tem os índices atribuídos de 1, outros não existem
 		uniqValues[samples[i][c]] = 1 // atribui 1 só para fazer existir o indice
 	}
 
@@ -226,7 +230,7 @@ func cutPoint(samples [][]interface{}, c int, samplesLabels []int, currentEntrop
 		currTotalL := 0
 		currTotalR := 0
 		for j := 0; j < len(samples); j++ {
-			if samples[j][c].(float64) <= value.(float64) {
+			if samples[j][c] <= value {
 				currTotalL += 1
 				mapL[samplesLabels[j]] += 1.0
 			} else {
@@ -253,9 +257,9 @@ func cutPoint(samples [][]interface{}, c int, samplesLabels []int, currentEntrop
 }
 
 // Cria os sub-espaço da direita e da esquerda (separa o espaço das amostras). partL e partR são vetores de indices
-func splitSpace(samples [][]interface{}, c int, value interface{}, partL *[]int, partR *[]int) {
+func splitSpace(samples [][]float64, c int, value float64, partL *[]int, partR *[]int) {
 	for j := 0; j < len(samples); j++ {
-		if samples[j][c].(float64) <= value.(float64) {
+		if samples[j][c] <= value {
 			*partL = append(*partL, j)
 
 		} else {
@@ -266,8 +270,8 @@ func splitSpace(samples [][]interface{}, c int, value interface{}, partL *[]int,
 }
 
 // Função auxiliar para pegar as amotras de um dado sub-espaço
-func getSamples(samples [][]interface{}, idxPart []int) [][]interface{} {
-	samplesPart := make([][]interface{}, len(idxPart))
+func getSamples(samples [][]float64, idxPart []int) [][]float64 {
+	samplesPart := make([][]float64, len(idxPart))
 	for i := 0; i < len(idxPart); i++ {
 		samplesPart[i] = samples[idxPart[i]]
 	}
@@ -285,7 +289,7 @@ func getLabels(samples []int, idxPart []int) []int {
 
 // Node Struct _________________________________________________________
 type Node struct {
-	threshold    interface{}
+	threshold    float64
 	thredholdIdx int
 	labels       map[int]int // quantidade de exemplos por classe nesse nó folha
 	left         *Node
