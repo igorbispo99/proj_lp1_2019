@@ -8,7 +8,7 @@ import ( //"fmt"
 
 // Tree Struct ____________________________________________________________
 type Tree struct {
-	root *Node
+	root  *Node
 	depth int
 }
 
@@ -21,7 +21,7 @@ func NewTree(input [][]interface{}, labels []int, nSamples int, nSelectedFeature
 
 	for i := 0; i < nSamples; i++ {
 		wg.Add(1)
-		go func (i int){
+		go func(i int) {
 			j := int(rand.Float64() * float64(len(input))) // retorna o inteiro do float aleatório gerado entre [0.0, 1.0] * len(input) ou seja entre [0.0, len(input)]
 			samples[i] = input[j]
 			samplesLabels[i] = labels[j]
@@ -30,20 +30,20 @@ func NewTree(input [][]interface{}, labels []int, nSamples int, nSelectedFeature
 	}
 	wg.Wait() // Aguarde até que o contador WaitGroup seja zero. Espera todas as goroutines terminarem
 	tree := &Tree{}
-	tree.depth = 1;
+	tree.depth = 1
 	tree.root = buildTree(samples, samplesLabels, nSelectedFeatures, maxDepth, tree)
 
 	return tree
 }
 
 // Cria a árvore recursivamente
-// - Seleciona algumas Características, - Calcula a Entropia, - encontra melhor ponto de corte (Característica de Corte), 
+// - Seleciona algumas Características, - Calcula a Entropia, - encontra melhor ponto de corte (Característica de Corte),
 // - Separa os Rótulos, - Calcula sub-árvores à esquerda e à direita
 func buildTree(samples [][]interface{}, samplesLabels []int, nSelectedFeatures int, maxDepth int, tree *Tree) *Node {
-	
-	if(tree.depth != maxDepth){
-		tree.depth += 1;
-		nFeatures := len(samples[1])                           // Features
+
+	if tree.depth != maxDepth {
+		tree.depth += 1
+		nFeatures := len(samples[1])                                     // Features
 		selectedFeatures := randomFeatures(nFeatures, nSelectedFeatures) // características selecionadas para o cutPoint
 
 		bestGain := 0.0
@@ -83,8 +83,8 @@ func buildTree(samples [][]interface{}, samplesLabels []int, nSelectedFeatures i
 			splitSpace(samples, bestThresholdIdx, bestThreshold, &bestPartL, &bestPartR)
 
 			// contruindo árvore recursivamente para os sub-espaço da direita e da esquerda.
-			
-			/* //contruindo Sub-espaços da direita e da esquerda em paralelo	
+
+			/* //contruindo Sub-espaços da direita e da esquerda em paralelo
 			wg := sync.WaitGroup{}
 			wg.Add(2)
 			go func (){
@@ -95,9 +95,9 @@ func buildTree(samples [][]interface{}, samplesLabels []int, nSelectedFeatures i
 				node.right = buildTree(getSamples(samples, bestPartR), getLabels(samplesLabels, bestPartR), nFeatures, maxDepth, tree)
 				wg.Done()
 			}
-			
+
 			wg.Wait() */
-			
+
 			node.left = buildTree(getSamples(samples, bestPartL), getLabels(samplesLabels, bestPartL), nFeatures, maxDepth, tree)
 			node.right = buildTree(getSamples(samples, bestPartR), getLabels(samplesLabels, bestPartR), nFeatures, maxDepth, tree)
 			return node
@@ -121,6 +121,55 @@ func randomFeatures(nFeatures int, nSelectedFeatures int) []int {
 	}
 
 	return tmp[:nSelectedFeatures]
+}
+
+// Input: Árvore de decisão e amostras
+// Output: Vetor de classificação das amostras
+func predictTree(tree Tree, input [][]interface{}) []int {
+	predictions := make([]int, len(input))
+
+	// Verificar e classificar cada amostra
+	for i, sample := range input {
+
+		// Inicializa o nó atual que
+		// percorrerá a árvore
+		currentNode := tree.root
+		labelsLength := len(currentNode.labels)
+
+		// Percorre a árvore até o nó folha
+		// Seguindo à esquerda se o valor da amostra
+		// é menor que o threshold, caso contrário à direita
+		for labelsLength == 0 {
+			feature := currentNode.thredholdIdx
+			threshold := currentNode.threshold.(float32)
+
+			if sample[feature].(float32) < threshold {
+				currentNode = currentNode.left
+			} else {
+				currentNode = currentNode.right
+			}
+		}
+
+		// Encontrar o índice do label de maior ocorrência
+		predictions[i] = maxOccurrenceLabel(currentNode.labels)
+
+	}
+
+	return predictions
+}
+
+// Input: lista de ocorrência de labels exemplos
+// Output: o label de maior ocorrência
+func maxOccurrenceLabel(listLabels map[int]int) int {
+	var maxLabel = 0
+
+	for i := 1; i < len(listLabels); i++ {
+		if listLabels[maxLabel] < listLabels[i] {
+			maxLabel = i
+		}
+	}
+
+	return maxLabel
 }
 
 func Entropy(p_vec map[int]float64, total int) float64 {
@@ -157,7 +206,7 @@ func Gini(p_vec map[string]float64) float64 { // VERIFICAR
 	return impure
 }
 
-/* Cada divisão do espaço é representada por um nó na árvore de decisão. A primeira divisão (nós raiz da árvore) leva em consideração todos os exemplos (separados aleatóriamente) do espaço ao encontrar o ponto de corte que maximiza a pureza, de acordo com algum critério de impureza, das sub-regiões resultantes. 
+/* Cada divisão do espaço é representada por um nó na árvore de decisão. A primeira divisão (nós raiz da árvore) leva em consideração todos os exemplos (separados aleatóriamente) do espaço ao encontrar o ponto de corte que maximiza a pureza, de acordo com algum critério de impureza, das sub-regiões resultantes.
 Para encontrar melhor ponto de corte, são testados todos os possíveis, ou seja, para cada atributo e valores possíveis calcula-se o ganho de informação (quão pura a divisão torna o espaço) para cada um dos pontos de corte candidatos. Após essa etapa, é escolhido o candidato com maior ganho de informação para ser o ponto de corte do nó em questão.
 */
 func cutPoint(samples [][]interface{}, c int, samplesLabels []int, currentEntropy float64) (float64, interface{}, int, int) {
@@ -236,9 +285,9 @@ func getLabels(samples []int, idxPart []int) []int {
 
 // Node Struct _________________________________________________________
 type Node struct {
-	threshold  interface{}
+	threshold    interface{}
 	thredholdIdx int
-	labels map[int]int 			// quantidade de exemplos por classe nesse nó folha
+	labels       map[int]int // quantidade de exemplos por classe nesse nó folha
 	left         *Node
 	right        *Node
 }
