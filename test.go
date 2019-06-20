@@ -65,9 +65,9 @@ func main() {
 
 	fmt.Printf("\n---\n")
 
-	rf := Forest.CreateRFClassifier(100, 20, 10)
+	rf := Forest.CreateRFClassifier(100, 10, 10)
 
-	Forest.FitRFClassifier(rf, X, Y, len(X), len(X[0]))
+	Forest.FitRFClassifier(rf, X, Y, 1000, 28)
 
 	yPred := Forest.PredRFCLassifier(rf, X)
 

@@ -189,7 +189,7 @@ func Entropy(p_vec map[int]float64, total int) float64 {
 	return entropy
 }
 
-func Gini(p_vec map[string]float64) float64 { // VERIFICAR
+func Gini(p_vec map[int]float64) float64 { // VERIFICAR
 	total := 0.0
 	impure := 0.0
 

@@ -43,8 +43,8 @@ func FitRFClassifier(rf *RFClassifier, inputs [][]float64, labels []int, nSample
 			rf.forest[i] = NewTree(inputs, labels, nSamples, nFeatures, rf.maxDepth)
 			wg_.Done()
 		}(i)
-	}
 
+	}
 	wg_.Wait()
 
 	fmt.Printf("Done...\n")
