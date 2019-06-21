@@ -37,7 +37,7 @@ func FitRFClassifier(rf *RFClassifier, inputs [][]float64, labels []int, nSample
 	wg_ := new(sync.WaitGroup)
 
 	for i := 0; i < rf.nTrees; i++ {
-		wg_.Add(1)
+		wg_.Add(1) 
 
 		go func(i int) {
 			rf.forest[i] = NewTree(inputs, labels, nSamples, nFeatures, rf.maxDepth)
