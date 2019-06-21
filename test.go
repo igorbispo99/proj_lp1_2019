@@ -6,6 +6,8 @@ package main
 import (
 	"fmt"
 
+	"math/rand"
+
 	"./Files"
 
 	"./Forest"
@@ -35,22 +37,38 @@ func generateMetrics(y []int, ypred []int, nLabels int) {
 
 }
 
-func main() {
-	//inputs := make([][]interface{}, 0)
+func splitTestTrain(x [][]float64, y []int, ratio float64) ([][]float64, []int, [][]float64, []int) {
 
+	nSamples := int(float64(len(x)) * ratio)
+
+	xTrain := make([][]float64, nSamples)
+	yTrain := make([]int, nSamples)
+
+	xTest := make([][]float64, len(x)-nSamples)
+	yTest := make([]int, len(x)-nSamples)
+
+	// Shuffling indexes vector
+	idxRand := rand.Perm(len(x))
+
+	for i := 0; i < nSamples; i++ {
+		xTrain[i] = x[idxRand[i]]
+		yTrain[i] = y[idxRand[i]]
+	}
+
+	for i := nSamples; i < len(x); i++ {
+		xTest[i-nSamples] = x[idxRand[i]]
+		yTest[i-nSamples] = y[idxRand[i]]
+	}
+
+	return xTrain, yTrain, xTest, yTest
+}
+
+func main() {
 	// Loading Dataset
 
 	inputs := Files.ReadFile("./data/mnist_test.csv")
 
 	fmt.Printf("%d\n", len(inputs))
-
-	/*
-		for _, line := range inputs {
-			for _, val := range line {
-				fmt.Printf("%f ", val)
-			}
-			fmt.Println()
-		}*/
 
 	// --- Splitting X and Y data
 
@@ -65,11 +83,20 @@ func main() {
 
 	fmt.Printf("\n---\n")
 
+	// -- Splitting train and test data
+
+	xTrain, yTrain, xTest, yTest := splitTestTrain(X, Y, 0.33)
+
+	// -- Instantiating RF Classifier
+
 	rf := Forest.CreateRFClassifier(100, 10, 10)
 
-	Forest.FitRFClassifier(rf, X, Y, 1000, 28)
+	// -- Fitting the data
 
-	yPred := Forest.PredRFCLassifier(rf, X)
+	Forest.FitRFClassifier(rf, xTrain, yTrain, 1000, 28)
+
+	// -- Predicting
+	yPred := Forest.PredRFCLassifier(rf, xTest)
 
 	for i := 0; i < 10; i++ {
 		fmt.Printf("Sample %d predicted as %d\n", i, yPred[i])
@@ -77,6 +104,6 @@ func main() {
 
 	fmt.Printf("\n---\n")
 
-	generateMetrics(Y, yPred, 10)
+	generateMetrics(yTest, yPred, 10)
 
 }
