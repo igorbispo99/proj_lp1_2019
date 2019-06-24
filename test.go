@@ -8,6 +8,8 @@ import (
 
 	"math/rand"
 
+	"os"
+
 	"./Files"
 
 	"./Forest"
@@ -63,10 +65,27 @@ func splitTestTrain(x [][]float64, y []int, ratio float64) ([][]float64, []int, 
 	return xTrain, yTrain, xTest, yTest
 }
 
+func savePredictions(yPred []int, yReal []int, filename string) {
+	f, err := os.Create(filename)
+
+	if err != nil {
+		fmt.Printf("Cannot create %s", filename)
+		return
+	}
+
+	for i := 0; i < len(yPred); i++ {
+		fmt.Fprintf(f, "%d %d\n", yPred[i], yReal[i])
+	}
+
+	f.Close()
+
+	return
+}
+
 func main() {
 	// Loading Dataset
 
-	inputs := Files.ReadFile("./data/mnist_test.csv")
+	inputs := Files.ReadFile("./data/out_spotify.csv")
 
 	fmt.Printf("%d\n", len(inputs))
 
@@ -85,15 +104,15 @@ func main() {
 
 	// -- Splitting train and test data
 
-	xTrain, yTrain, xTest, yTest := splitTestTrain(X, Y, 0.33)
+	xTrain, yTrain, xTest, yTest := splitTestTrain(X, Y, 0.8)
 
 	// -- Instantiating RF Classifier
 
-	rf := Forest.CreateRFClassifier(100, 10, 10)
+	rf := Forest.CreateRFClassifier(50, -1, 5)
 
 	// -- Fitting the data
 
-	Forest.FitRFClassifier(rf, xTrain, yTrain, 1000, 28)
+	Forest.FitRFClassifier(rf, xTrain, yTrain, 1200, 5)
 
 	// -- Predicting
 	yPred := Forest.PredRFCLassifier(rf, xTest)
@@ -104,6 +123,9 @@ func main() {
 
 	fmt.Printf("\n---\n")
 
-	generateMetrics(yTest, yPred, 10)
+	generateMetrics(yTest, yPred, 5)
+
+	// Saving outputed predictions
+	savePredictions(yPred, yTest, "out_spotify.txt")
 
 }
